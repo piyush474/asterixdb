@@ -5859,15 +5859,26 @@ LetClause LetElement() throws ParseException:
 LetClause WithRecursiveElement() throws ParseException:
 {
       VariableExpr varExp;
-      Expression beExp;
+      SelectSetOperation selectExpr;
+      List<String> recusiveQueryParams = new ArrayList<String>();
       extendCurrentScope();
 }
 {
-    varExp = Variable() <AS> beExp = Expression() //change expression to recursiveexpr and add params
+    varExp = Variable()
+    <AS>
+    (   <LEFTPAREN>
+            ident = VariableIdentifier() { recusiveQueryParams.add(ident); }
+            ( <COMMA> ident = VariableIdentifier() { recusiveQueryParams.add(ident); } )*
+        <RIGHTPAREN>
+    )?
+    <LEFTPAREN>
+    selectExpr = SelectSetOperation()
+    <RIGHTPAREN>
     {
-      LetClause lc = new LetClause(varExp, beExp);
-      lc.setSourceLocation(varExp.getSourceLocation());
-      return lc;
+        Expression beExp = new RecursiveExpression(recursiveQueryParams, selectExpr); //create RecursiveExpression object
+        LetClause lc = new LetClause(varExp, beExp);
+        lc.setSourceLocation(varExp.getSourceLocation());
+        return lc;
     }
 }
 
