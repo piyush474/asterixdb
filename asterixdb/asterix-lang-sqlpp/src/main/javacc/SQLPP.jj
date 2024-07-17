@@ -5491,7 +5491,12 @@ List<LetClause> LetClause() throws ParseException:
     (
      (<LET>|<LETTING>) letClause = LetElement() { letList.add(letClause); } (LOOKAHEAD(1) <COMMA> letClause = LetElement() { letList.add(letClause); })*
      |
-     <WITH> letClause = WithElement() { letList.add(letClause); } (LOOKAHEAD(1) <COMMA> letClause = WithElement() { letList.add(letClause); })*
+     <WITH>
+       (
+        <RECURSIVE> letClause = WithRecursiveElement() { letList.add(letClause); } (LOOKAHEAD(1) <COMMA> letClause = WithRecursiveElement() { letList.add(letClause); })*
+        |
+        letClause = WithElement() { letList.add(letClause); } (LOOKAHEAD(1) <COMMA> letClause = WithElement() { letList.add(letClause); })*
+       )
     )
     {
       return letList;
@@ -5851,6 +5856,21 @@ LetClause LetElement() throws ParseException:
     }
 }
 
+LetClause WithRecursiveElement() throws ParseException:
+{
+      VariableExpr varExp;
+      Expression beExp;
+      extendCurrentScope();
+}
+{
+    varExp = Variable() <AS> beExp = Expression() //change expression to recursiveexpr and add params
+    {
+      LetClause lc = new LetClause(varExp, beExp);
+      lc.setSourceLocation(varExp.getSourceLocation());
+      return lc;
+    }
+}
+
 LetClause WithElement() throws ParseException:
 {
     VariableExpr varExp;
@@ -5997,6 +6017,7 @@ TOKEN [IGNORE_CASE]:
   | <PRESORTED : "pre-sorted">
   | <PRIMARY : "primary">
   | <RAW : "raw">
+  | <RECURSIVE : "recursive">
   | <RETURN : "return">
   | <RETURNING : "returning">
   | <RIGHT : "right">
